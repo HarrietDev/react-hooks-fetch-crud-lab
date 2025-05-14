@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState,useEffect,useRef } from "react";
 
-function QuestionForm(props) {
+function QuestionForm({setQuestions, onAddQuestion}) {
   const [formData, setFormData] = useState({
     prompt: "",
     answer1: "",
@@ -9,6 +9,16 @@ function QuestionForm(props) {
     answer4: "",
     correctIndex: 0,
   });
+
+   // Track if component is mounted
+   const isMounted = useRef(true);
+   useEffect(() => {
+    isMounted.current = true;
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   function handleChange(event) {
     setFormData({
@@ -19,7 +29,51 @@ function QuestionForm(props) {
 
   function handleSubmit(event) {
     event.preventDefault();
-    console.log(formData);
+
+    const newQuestion ={
+      prompt: formData.prompt,
+      answers : [
+        formData.answer1,
+        formData.answer2,
+        formData.answer3,
+        formData.answer4,
+      ],
+      correctIndex: Number(formData.correctIndex)
+    };
+    // console.log(formData);
+     fetch("http://localhost:4000/questions", {
+      method: "POST",
+      headers: {
+        "Content-type": "application/json",
+      },
+      body : JSON.stringify(newQuestion)
+     })
+     .then((r) => r.json())
+    .then((newQuestion) => {
+    //   console.log(addedQuestion); // Check the response from the server
+    //   // only update state if still mounted
+    //   if (isMounted.current) {
+    //     setQuestions((prevQuestions) =>[
+    //   ...prevQuestions , addedQuestion
+    //  ])
+    onAddQuestion(newQuestion); //<--- this adds it to the DOM
+    // Reset form
+
+    setFormData({
+      prompt:  "",
+      answer1: "",
+      answer2: "",
+      answer3: "",
+      answer4: "",
+      correctIndex: 0,
+
+    })
+   })
+   .catch ((error) => {
+    console.error("Error adding question:", error)
+   }) ;
+   
+  
   }
 
   return (
